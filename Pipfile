@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = "*"
+celery = "*"
+psycopg2 = "*"
+asyncpg = "*"
+sqlalchemy = {extras = ["asyncio"], version = "*"}
+pydantic = "*"
+pydantic-settings = "*"
+watchdog = "*"
+alembic = "*"
+pyjwt = "*"
+
+[dev-packages]
+black = "*"
+isort = "*"
+flake8 = "*"
+tomli = "*"
+mypy = "*"
+types-cachetools = "*"
+
+
+[requires]
+python_version = "3.12"

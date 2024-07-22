@@ -1,0 +1,90 @@
+version: '3.7'
+
+services:
+  postgresql:
+    container_name: fancys-postgres
+    image: postgres:14.9-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - ~/apps/fancys-boilerplate:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=fancys
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d fancys"]
+      interval: 2s
+      timeout: 1s
+      retries: 50
+    networks:
+      - fancys
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: 'rabbitmq'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ~/apps/fancys-boilerplate-rmq-data:/var/lib/rabbitmq
+      - ~/apps/fancys-boilerplate-rmq-logs:/var/log/rabbitmq
+    networks:
+      - fancys
+
+  api:
+    container_name: fancys_api
+    build:
+      context: .
+      dockerfile: dev.api.dockerfile
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: fancys
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: postgresql
+
+      RABBITMQ_BROKER: amqp://guest:guest@rabbitmq:5672/
+    networks:
+      - fancys
+
+    ports:
+      - 8000:8000
+    depends_on:
+      - postgresql
+      - rabbitmq
+      - worker
+    volumes:
+      - ${PWD}:/var/app
+    env_file:
+      - dev.env
+
+  worker:
+    container_name: fancys_worker
+    build:
+      context: .
+      dockerfile: dev.worker.dockerfile
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: fancys
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: postgresql
+
+      RABBITMQ_BROKER: amqp://guest:guest@rabbitmq:5672/
+
+    depends_on:
+      - postgresql
+      - rabbitmq
+    volumes:
+      - ${PWD}:/var/app
+    env_file:
+      - dev.env
+    networks:
+      - fancys
+
+
+
+networks:
+  fancys:
+    driver: bridge
